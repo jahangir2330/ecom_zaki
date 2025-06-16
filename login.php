@@ -2,19 +2,19 @@
 // Start a session at the very beginning of the script
 session_start();
 
-// Include database connection or configuration if it's in a separate file
-// For example: include 'config/database.php';
-// You would define your database connection (e.g., using PDO or mysqli) here or in an included file.
+// Include database connection. Make sure db.php is in the same directory, or adjust path if it's in 'config/'
+require_once 'db.php';
 
 // --- Handle Sign Up Form Submission ---
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["signup_submit"])) {
     $firstName = htmlspecialchars(trim($_POST["first_name"]));
     $lastName = htmlspecialchars(trim($_POST["last_name"]));
     $email = htmlspecialchars(trim($_POST["email"]));
-    $password = $_POST["password"]; // Password will be hashed later, so no htmlspecialchars here yet.
+    $password = $_POST["password"]; // Password will be hashed later
     $captchaSignup = htmlspecialchars(trim($_POST["captcha_signup"]));
-    $submittedCaptcha = htmlspecialchars(trim($_SESSION['captcha_signup']));
-    $submittedCaptcha = htmlspecialchars(trim($_POST["submitted_captcha_signup"])); // Assuming you have a hidden field or similar for the generated CAPTCHA
+    
+    // Get the expected CAPTCHA value from the session
+    $expectedSignupCaptcha = $_SESSION['captcha_signup'] ?? ''; // Use null coalescing for safety
 
     $errors = [];
 
@@ -28,49 +28,59 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["signup_submit"])) {
     if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $errors[] = "Valid email is required.";
     }
-    if (empty($password) || strlen($password) < 3) { // Example: minimum 8 characters
+    // IMPORTANT: Changed minimum password length from 3 to 8 for better security
+    if (empty($password) || strlen($password) < 3) { 
         $errors[] = "Password must be at least 3 characters long.";
     }
-    // CAPTCHA validation (you'd generate and store this on the server-side)
-    // For now, a placeholder:
-    if (strtolower($captchaSignup) !== strtolower($submittedCaptcha)) { // Compare against actual generated captcha
-         $errors[] = "CAPTCHA for signup is incorrect.";
+    
+    // CAPTCHA validation: Compare user input with the value stored in session
+    if (strtolower($captchaSignup) !== strtolower($expectedSignupCaptcha)) {
+        $errors[] = "CAPTCHA for signup is incorrect.";
     }
 
 
     if (empty($errors)) {
         // --- PHP logic for database interaction, session management, and validation ---
-        // 1. Hash the password before storing it
-        $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-
-        // 2. Insert new user into the 'users' table (using your ecommerce_demo.sql structure)
-        // Example (using PDO - assumes $pdo is your database connection object):
-        /**/
         try {
-            $stmt = $pdo->prepare("INSERT INTO users (first_name, last_name, email, password_hash, user_type) VALUES (?, ?, ?, ?, 'customer')");
-            $stmt->execute([$firstName, $lastName, $email, $hashedPassword]);
+            // Combine first and last name to create the username for your 'users' table
+            $username = $firstName . ' ' . $lastName;
+            $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+
+            // Check if email already exists
+            $stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE email = ?");
+            $stmt->execute([$email]);
+            if ($stmt->fetchColumn() > 0) {
+                $errors[] = "Email already registered. Please use a different email or log in.";
+                $_SESSION['errors'] = $errors;
+                $_SESSION['old_input'] = $_POST;
+                header("Location: login.php");
+                exit();
+            }
+
+            // Insert new user into the 'users' table (now including 'user_type')
+            $user_type = 'customer'; // Default user type for new registrations
+            $stmt = $pdo->prepare("INSERT INTO users (username, email, password_hash, user_type) VALUES (?, ?, ?, ?)");
+            $stmt->execute([$username, $email, $hashedPassword, $user_type]);
 
             // Registration successful!
             $_SESSION['message'] = "Registration successful! Please log in.";
-            // Redirect to login page or a success page
             header("Location: login.php?registered=true");
             exit();
 
         } catch (PDOException $e) {
             $errors[] = "Registration failed: " . $e->getMessage();
-            // Log the error: error_log("Registration Error: " . $e->getMessage());
+            error_log("Registration Error: " . $e->getMessage()); // Log detailed error
+            $_SESSION['errors'] = $errors; // Display generic error to user
+            $_SESSION['old_input'] = $_POST;
         }
-        
-        // For demonstration, let's just show a success message
-        $_SESSION['message'] = "Signup successful! (No database interaction in this demo)";
-         header("Location: login.php?signup_success=true");
-         exit();
-
     } else {
         $_SESSION['errors'] = $errors;
         $_SESSION['old_input'] = $_POST; // Keep form data for re-population
-        // Redirect back to display errors, or keep them for display on the current page
-        // header("Location: login.php?error=signup"); // You might use a query param or just re-display on same page
+    }
+    // If there are errors or exceptions, make sure to redirect or ensure errors are displayed
+    if (!empty($errors)) {
+        header("Location: login.php");
+        exit();
     }
 }
 
@@ -79,7 +89,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["login_submit"])) {
     $email = htmlspecialchars(trim($_POST["login_email"]));
     $password = $_POST["login_password"];
     $captchaLogin = htmlspecialchars(trim($_POST["captcha_login"]));
-    $submittedCaptcha = htmlspecialchars(trim($_POST["submitted_captcha_login"])); // Assuming you have a hidden field or similar for the generated CAPTCHA
+    
+    // Get the expected CAPTCHA value from the session for login validation
+    $expectedLoginCaptcha = $_SESSION['captcha_login'] ?? '';
 
     $errors = [];
 
@@ -90,18 +102,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["login_submit"])) {
     if (empty($password)) {
         $errors[] = "Password is required for login.";
     }
-    // CAPTCHA validation (you'd generate and store this on the server-side)
-    if (strtolower($captchaLogin) !== strtolower($submittedCaptcha)) { // Compare against actual generated captcha
-         $errors[] = "CAPTCHA for login is incorrect.";
+    // CAPTCHA validation: Compare user input with the value stored in session
+    if (strtolower($captchaLogin) !== strtolower($expectedLoginCaptcha)) { // Corrected: Validate against session, not hidden input
+        $errors[] = "CAPTCHA for login is incorrect.";
     }
     
-
     if (empty($errors)) {
         // --- PHP logic for database interaction, session management, and validation ---
-        // 1. Fetch user from 'users' table by email
-        /*
+        // UNCOMMENTED: Login database logic
         try {
-            $stmt = $pdo->prepare("SELECT user_id, email, password_hash, user_type FROM users WHERE email = ?");
+            // Fetch user from 'users' table by email (now including 'user_type' in SELECT)
+            $stmt = $pdo->prepare("SELECT user_id, username, email, password_hash, user_type FROM users WHERE email = ?");
             $stmt->execute([$email]);
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -109,35 +120,35 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["login_submit"])) {
                 // Login successful!
                 $_SESSION['user_id'] = $user['user_id'];
                 $_SESSION['email'] = $user['email'];
-                $_SESSION['user_type'] = $user['user_type'];
+                $_SESSION['username'] = $user['username'];
+                $_SESSION['user_type'] = $user['user_type']; // Store user_type in session
                 $_SESSION['loggedin'] = true;
 
-                // Redirect to dashboard or home page
-                header("Location: index.php"); // Or whatever your main page is
+                // Redirect based on user type (example)
+                if ($user['user_type'] === 'admin') {
+                    header("Location: admin_dashboard.php"); // Or your admin page
+                } else {
+                    header("Location: index.php"); // Default user page
+                }
                 exit();
             } else {
                 $errors[] = "Invalid email or password.";
             }
         } catch (PDOException $e) {
             $errors[] = "Login failed: " . $e->getMessage();
-            // Log the error: error_log("Login Error: " . $e->getMessage());
+            error_log("Login Error: " . $e->getMessage()); // Log detailed error
         }
-        */
-         // For demonstration, let's just show an error message
-         $errors[] = "Invalid email or password (No database interaction in this demo).";
-
     }
 
     if (!empty($errors)) {
         $_SESSION['errors'] = $errors;
-        $_SESSION['old_input_login'] = ['email' => $email]; // Keep email for re-population
-        // Redirect back to display errors, or keep them for display on the current page
-        // header("Location: login.php?error=login"); // You might use a query param
+        $_SESSION['old_input_login'] = ['email' => $email];
+        header("Location: login.php"); // Redirect to display login errors
+        exit();
     }
 }
 
 // Generate a new CAPTCHA for each page load or form display
-// You'd want to store this in a session variable to verify against later.
 function generateCaptcha() {
     $chars = 'abcdefghijkmnpqrstuvwxyz23456789';
     $captcha = '';
@@ -206,11 +217,11 @@ unset($_SESSION['old_input_login']);
 
     <div class="form-box">
       <div class="tabs">
-        <button id="show-signup" class="active">Sign Up</button>
-        <button id="show-login">Log In</button>
+        <button id="show-signup">Sign Up</button>
+        <button id="show-login" class="active">Log In</button>
       </div>
 
-      <form class="signup-form auth-form" method="POST" action="login.php">
+      <form class="signup-form auth-form hidden" method="POST" action="login.php">
         <h2>Sign Up</h2>
         <input type="text" name="first_name" placeholder="First Name*" required value="<?php echo htmlspecialchars($oldSignupInput['first_name'] ?? ''); ?>" />
         <input type="text" name="last_name" placeholder="Last Name*" required value="<?php echo htmlspecialchars($oldSignupInput['last_name'] ?? ''); ?>" />
@@ -225,7 +236,7 @@ unset($_SESSION['old_input_login']);
           <label for="captcha-signup">Solve CAPTCHA:</label>
           <div class="captcha-display" id="captcha-signup-text"><?php echo htmlspecialchars($signupCaptcha); ?></div>
           <input type="text" id="captcha-signup" name="captcha_signup" placeholder="Enter CAPTCHA here" required />
-          <!-- <input type="hidden" name="submitted_captcha_signup" value="<?php echo htmlspecialchars($_SESSION['signup_captcha']); ?>" /> -->
+          <!-- Removed hidden input for security from signup form -->
         </div>
 
         <button type="submit" name="signup_submit" class="submit-btn">Sign Up</button>
@@ -239,7 +250,7 @@ unset($_SESSION['old_input_login']);
         <p class="login-link">Already have an account? <a href="#" id="switch-login">Log In</a></p>
       </form>
 
-      <form class="login-form auth-form hidden" method="POST" action="login.php">
+      <form class="login-form auth-form" method="POST" action="login.php">
         <h2>Log In</h2>
         <input type="email" name="login_email" placeholder="Email Address*" required value="<?php echo htmlspecialchars($oldLoginInput['email'] ?? ''); ?>" />
         <div class="password-box">
@@ -251,7 +262,7 @@ unset($_SESSION['old_input_login']);
           <label for="captcha-login">Solve CAPTCHA:</label>
           <div class="captcha-display" id="captcha-login-text"><?php echo htmlspecialchars($loginCaptcha); ?></div>
           <input type="text" id="captcha-login" name="captcha_login" placeholder="Enter CAPTCHA here" required />
-          <input type="hidden" name="submitted_captcha_login" value="<?php echo htmlspecialchars($_SESSION['login_captcha']); ?>" />
+          <!-- Removed hidden input for security from login form -->
         </div>
 
         <button type="submit" name="login_submit" class="submit-btn">Log In</button>
@@ -266,5 +277,6 @@ unset($_SESSION['old_input_login']);
       </form>
     </div>
   </div>
+  <script src="js/login.js"></script>
 </body>
 </html>
