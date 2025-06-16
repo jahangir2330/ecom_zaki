@@ -42,7 +42,7 @@ p{
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 20px 80px;
+    padding: 2px 20px;
     background: #efefef;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.06);
     z-index: 999;
@@ -661,3 +661,62 @@ footer .follow i:hover , footer a:hover{
         margin: 20px;
     }
     
+
+    /* navbar  */
+
+.dropdown {
+    position: relative;
+    display: inline-block; /* Or block depending on your layout */
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #f9f9f9;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+    border-radius: 5px;
+    top: 100%; /* Position below the profile icon */
+    left: 0; /* Align left with the icon */
+}
+
+.dropdown-content a {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+    text-align: left;
+}
+
+.dropdown-content a:hover {
+    background-color: #f1f1f1;
+    border-radius: 5px;
+}
+
+.dropdown:hover .dropdown-content {
+    display: block; /* Show on hover */
+}
+
+/* Basic styling for the profile link itself */
+.profile-link {
+    display: flex;
+    align-items: center;
+    gap: 5px; /* Space between icon and username */
+    color: #333; /* Or your desired link color */
+    padding: 0 20px; /* Adjust as needed for padding */
+    height: 80px; /* Match your navbar height */
+    line-height: 80px; /* Vertically align text */
+    text-decoration: none;
+    transition: 0.3s ease;
+}
+
+.profile-link i {
+    font-size: 1.2em; /* Adjust icon size */
+}
+
+/* Adjust navbar item spacing if needed */
+#navbar li {
+    padding: 0 20px;
+    position: relative; /* Needed for dropdown positioning */
+}

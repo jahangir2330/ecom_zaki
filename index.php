@@ -1,24 +1,7 @@
 <?php
-// Database connection
-$host = 'localhost'; // or your host
-$db   = 'ecommerce_demo'; // your database name
-$user = 'root'; // your DB username
-$pass = ''; // your DB password
-$charset = 'utf8mb4';
-
-$dsn = "mysql:host=$host;dbname=$db;charset=$charset";
-$options = [
-  PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-  PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-];
-
-try {
-    $pdo = new PDO($dsn, $user, $pass, $options);
-} catch (\PDOException $e) {
-    echo "Database connection failed: " . $e->getMessage();
-    exit;
-}
-
+// Start a session at the very beginning of the script
+session_start();
+require_once 'db.php';
 // Fetch products
 $stmt = $pdo->query("SELECT * FROM products LIMIT 8");
 $products = $stmt->fetchAll();
@@ -30,6 +13,11 @@ $featuredProducts = $featuedQuary->fetchAll();
 
 $newArrivalQuary = $pdo->query("SELECT * FROM products WHERE isNewArrival=1 LIMIT 4");
 $newProducts = $newArrivalQuary->fetchAll();
+
+// Check if user is logged in
+$isLoggedIn = isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true;
+$username = $isLoggedIn ? htmlspecialchars($_SESSION['username']) : '';
+$userType = $isLoggedIn ? ($_SESSION['user_type'] ?? 'customer') : ''; // Default to 'customer' if not set
 ?>
 
 <!DOCTYPE html>
@@ -37,7 +25,7 @@ $newProducts = $newArrivalQuary->fetchAll();
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SneakersxStudio</title>
+  <title>Sneakersx Studio</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css"/>
 </head>
@@ -45,17 +33,33 @@ $newProducts = $newArrivalQuary->fetchAll();
 
 <!-- Header -->
 <section id="header">
-  <a href="index.php"><img src="/img/Logo.png" alt="Logo"></a>
+  <a href="index.php"><img src="img/Logo.png" alt="Logo"></a>
   <div>
     <ul id="navbar">
       <li><a class="active" href="index.php">Home</a></li>
       <li><a href="shop.php">Shop</a></li>
+      <?php if ($userType === 'admin'): // Show admin link only if user is admin ?>
       <li><a href="admin.html">Admin</a></li>
+      <?php endif; ?>
       <li><a href="aboutUS.html">About</a></li>
       <li><a href="blog.html">Blog</a></li>
+      
+      <?php if ($isLoggedIn): // If logged in, show profile icon and logout ?>
+      <li class="dropdown">
+        <a href="profile.php" class="profile-link">
+          <i class="fa fa-user"></i> <?php echo $username; ?>
+        </a>
+        <div class="dropdown-content">
+          <a href="profile.php">My Profile</a>
+          <a href="logout.php">Logout</a>
+        </div>
+      </li>
+      <?php else: // If not logged in, show login link ?>
       <li><a href="login.php">Log In</a></li>
+      <?php endif; ?>
+      
       <li><a href="cart.php"><i class="far fa-shopping-bag"></i></a></li>
-      <li><a href="profile.html"><i class="fa fa-user"></i></a></li>
+      <!-- Removed duplicate profile link, replaced by conditional display -->
     </ul>
   </div>
 </section>
@@ -163,6 +167,6 @@ $newProducts = $newArrivalQuary->fetchAll();
   </div>
 </footer>
 
-<script src="script.js"></script>
+<script src="js/script.js"></script>
 </body>
 </html>

@@ -7,7 +7,7 @@
 }
 
 body {
-  background: linear-gradient(135deg, #222831, #393E46);
+  background: linear-gradient(135deg, #f3e5cf, #e9e1d4);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -24,7 +24,7 @@ body {
 
 .logo {
   text-align: center;
-  color: #00ADB5;
+  color: #b67070;
   font-size: 2em;
   margin-bottom: 20px;
 }
@@ -50,7 +50,7 @@ body {
 }
 
 .tabs button.active {
-  border-color: #00ADB5;
+  border-color: #b67070;
   font-weight: bold;
 }
 
@@ -106,7 +106,7 @@ body {
 }
 
 .submit-btn {
-  background: #00ADB5;
+  background: #b67070;
   color: white;
   padding: 12px;
   border: none;
