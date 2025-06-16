@@ -1,0 +1,180 @@
+/* Reset and base */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  background: linear-gradient(135deg, #222831, #393E46);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.container {
+  background: #EEEEEE;
+  padding: 40px;
+  border-radius: 15px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+  width: 400px;
+}
+
+.logo {
+  text-align: center;
+  color: #00ADB5;
+  font-size: 2em;
+  margin-bottom: 20px;
+}
+
+.form-box {
+  width: 100%;
+}
+
+.tabs {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 20px;
+}
+
+.tabs button {
+  background: none;
+  border: none;
+  font-size: 1em;
+  padding: 10px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  color: #393E46;
+}
+
+.tabs button.active {
+  border-color: #00ADB5;
+  font-weight: bold;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.auth-form input {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+.password-box {
+  position: relative;
+}
+
+.password-box input {
+  width: 100%;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 15px;
+  top: 10px;
+  cursor: pointer;
+  color: #666;
+}
+
+.terms {
+  font-size: 0.85em;
+  color: #333;
+}
+
+.captcha-box {
+  background: #e6f7f7;
+  border: 1px solid #b2ebf2;
+  padding: 10px;
+  border-radius: 8px;
+}
+
+.captcha-display {
+  font-weight: bold;
+  font-size: 1.2em;
+  margin-bottom: 8px;
+  text-align: center;
+  letter-spacing: 4px;
+  background: #fff;
+  padding: 8px;
+  border-radius: 5px;
+}
+
+.submit-btn {
+  background: #00ADB5;
+  color: white;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.submit-btn:hover {
+  background: #007a85;
+}
+
+.divider {
+  text-align: center;
+  position: relative;
+  font-size: 0.85em;
+  color: #777;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 40%;
+  height: 1px;
+  background: #ccc;
+}
+
+.divider::before {
+  left: 0;
+}
+
+.divider::after {
+  right: 0;
+}
+
+.social-label {
+  text-align: center;
+  font-size: 0.9em;
+}
+
+.social-icons {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
+
+.social-icons button {
+  border: none;
+  background: #ccc;
+  padding: 10px;
+  border-radius: 50%;
+  font-size: 1em;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.social-icons button:hover {
+  background: #aaa;
+}
+
+.login-link {
+  text-align: center;
+  font-size: 0.85em;
+}
+
+.hidden {
+  display: none;
+}
