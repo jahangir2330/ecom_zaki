@@ -1,68 +1,17 @@
 <?php
-// Start a session at the very beginning of the script
-session_start();
-require_once 'db.php';
-// Fetch products
+// Include the common header file which handles session_start(), db.php, and login status
+require_once 'header.php';
+
+// Fetch products (these queries are specific to the index page, so they remain here)
 $stmt = $pdo->query("SELECT * FROM products LIMIT 8");
 $products = $stmt->fetchAll();
-
 
 $featuedQuary = $pdo->query("SELECT * FROM products WHERE isFeatured=1 LIMIT 4");
 $featuredProducts = $featuedQuary->fetchAll();
 
-
 $newArrivalQuary = $pdo->query("SELECT * FROM products WHERE isNewArrival=1 LIMIT 4");
 $newProducts = $newArrivalQuary->fetchAll();
-
-// Check if user is logged in
-$isLoggedIn = isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true;
-$username = $isLoggedIn ? htmlspecialchars($_SESSION['username']) : '';
-$userType = $isLoggedIn ? ($_SESSION['user_type'] ?? 'customer') : ''; // Default to 'customer' if not set
 ?>
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Sneakersx Studio</title>
-  <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css"/>
-</head>
-<body>
-
-<!-- Header -->
-<section id="header">
-  <a href="index.php"><img src="img/Logo.png" alt="Logo"></a>
-  <div>
-    <ul id="navbar">
-      <li><a class="active" href="index.php">Home</a></li>
-      <li><a href="shop.php">Shop</a></li>
-      <?php if ($userType === 'admin'): // Show admin link only if user is admin ?>
-      <li><a href="admin.html">Admin</a></li>
-      <?php endif; ?>
-      <li><a href="aboutUS.html">About</a></li>
-      <li><a href="blog.html">Blog</a></li>
-      
-      <?php if ($isLoggedIn): // If logged in, show profile icon and logout ?>
-      <li class="dropdown">
-        <a href="profile.php" class="profile-link">
-          <i class="fa fa-user"></i> <?php echo $username; ?>
-        </a>
-        <div class="dropdown-content">
-          <a href="profile.php">My Profile</a>
-          <a href="logout.php">Logout</a>
-        </div>
-      </li>
-      <?php else: // If not logged in, show login link ?>
-      <li><a href="login.php">Log In</a></li>
-      <?php endif; ?>
-      
-      <li><a href="cart.php"><i class="far fa-shopping-bag"></i></a></li>
-      <!-- Removed duplicate profile link, replaced by conditional display -->
-    </ul>
-  </div>
-</section>
 
 <!-- Hero -->
 <section id="hero">
@@ -131,42 +80,7 @@ $userType = $isLoggedIn ? ($_SESSION['user_type'] ?? 'customer') : ''; // Defaul
   </div>
 </section>
 
-<!-- Footer -->
-<footer class="section-p1">
-  <div class="col">
-    <h4>Contact</h4>
-    <p><strong>Email:</strong> s4125820@student.rmit.edu.au, s4043058@student.rmit.edu.au</p>
-    <p><strong>Email:</strong> s4061087@student.rmit.edu.au, s4088056@student.rmit.edu.au</p>
-    <p><strong>Location:</strong> Melbourne, Australia</p>
-    <div class="follow">
-      <h4>Follow Us</h4>
-      <div class="icon">
-        <i class="fab fa-facebook-f"></i>
-        <i class="fab fa-twitter"></i>
-        <i class="fab fa-instagram"></i>
-        <i class="fab fa-pinterest-p"></i>
-        <i class="fab fa-youtube"></i>
-      </div>
-    </div>
-  </div>
-  <div class="col">
-    <h4>About</h4>
-    <a href="#">About Us</a>
-    <a href="#">Delivery Information</a>
-    <a href="#">Privacy Policy</a>
-    <a href="#">Terms & Conditions</a>
-    <a href="#">Contact Us</a>
-  </div>
-  <div class="col">
-    <h4>My Account</h4>
-    <a href="#">Sign In</a>
-    <a href="#">View Cart</a>
-    <a href="#">My Wishlist</a>
-    <a href="#">Track My Order</a>
-    <a href="#">Help</a>
-  </div>
-</footer>
-
-<script src="js/script.js"></script>
-</body>
-</html>
+<?php
+// Include the common footer file
+require_once 'footer.php';
+?>

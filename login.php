@@ -5,6 +5,10 @@ session_start();
 // Include database connection. Make sure db.php is in the same directory, or adjust path if it's in 'config/'
 require_once 'db.php';
 
+// Define login attempt limits
+define('MAX_LOGIN_ATTEMPTS', 3);
+define('LOCK_DURATION_HOURS', 1); // Account locked for 1 hour
+
 // --- Handle Sign Up Form Submission ---
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["signup_submit"])) {
     $firstName = htmlspecialchars(trim($_POST["first_name"]));
@@ -103,35 +107,75 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["login_submit"])) {
         $errors[] = "Password is required for login.";
     }
     // CAPTCHA validation: Compare user input with the value stored in session
-    if (strtolower($captchaLogin) !== strtolower($expectedLoginCaptcha)) { // Corrected: Validate against session, not hidden input
+    if (strtolower($captchaLogin) !== strtolower($expectedLoginCaptcha)) {
         $errors[] = "CAPTCHA for login is incorrect.";
     }
     
     if (empty($errors)) {
-        // --- PHP logic for database interaction, session management, and validation ---
-        // UNCOMMENTED: Login database logic
         try {
-            // Fetch user from 'users' table by email (now including 'user_type' in SELECT)
-            $stmt = $pdo->prepare("SELECT user_id, username, email, password_hash, user_type FROM users WHERE email = ?");
+            $stmt = $pdo->prepare("SELECT user_id, username, email, password_hash, user_type, failed_logins, account_locked_until FROM users WHERE email = ?");
             $stmt->execute([$email]);
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if ($user && password_verify($password, $user['password_hash'])) {
-                // Login successful!
-                $_SESSION['user_id'] = $user['user_id'];
-                $_SESSION['email'] = $user['email'];
-                $_SESSION['username'] = $user['username'];
-                $_SESSION['user_type'] = $user['user_type']; // Store user_type in session
-                $_SESSION['loggedin'] = true;
-
-                // Redirect based on user type (example)
-                if ($user['user_type'] === 'admin') {
-                    header("Location: admin_dashboard.php"); // Or your admin page
+            // Check if user exists
+            if ($user) {
+                // Check if account is locked
+                if ($user['account_locked_until'] && strtotime($user['account_locked_until']) > time()) {
+                    $lock_time = date('g:i A', strtotime($user['account_locked_until']));
+                    $errors[] = "Account is locked. Please try again after " . $lock_time . ".";
+                    // Do NOT increment failed logins if account is already locked
                 } else {
-                    header("Location: index.php"); // Default user page
+                    // Account is not locked or lock has expired, proceed with password verification
+
+                    // If lock has expired, reset failed_logins and account_locked_until
+                    if ($user['account_locked_until'] && strtotime($user['account_locked_until']) <= time()) {
+                        $reset_stmt = $pdo->prepare("UPDATE users SET failed_logins = 0, account_locked_until = NULL WHERE user_id = ?");
+                        $reset_stmt->execute([$user['user_id']]);
+                        $user['failed_logins'] = 0; // Update in memory too
+                    }
+
+                    if (password_verify($password, $user['password_hash'])) {
+                        // Login successful!
+                        // Reset failed login attempts on successful login
+                        $stmt_reset_attempts = $pdo->prepare("UPDATE users SET failed_logins = 0, account_locked_until = NULL WHERE user_id = ?");
+                        $stmt_reset_attempts->execute([$user['user_id']]);
+
+                        $_SESSION['user_id'] = $user['user_id'];
+                        $_SESSION['email'] = $user['email'];
+                        $_SESSION['username'] = $user['username'];
+                        $_SESSION['user_type'] = $user['user_type'];
+                        $_SESSION['loggedin'] = true;
+
+                        // Redirect based on user type
+                        if ($user['user_type'] === 'admin') {
+                            header("Location: admin_dashboard.php");
+                        } else {
+                            header("Location: index.php");
+                        }
+                        exit();
+                    } else {
+                        // Invalid password
+                        $errors[] = "Invalid email or password.";
+
+                        // Increment failed login attempts
+                        $new_failed_logins = $user['failed_logins'] + 1;
+                        $update_stmt = $pdo->prepare("UPDATE users SET failed_logins = ? WHERE user_id = ?");
+                        $update_stmt->execute([$new_failed_logins, $user['user_id']]);
+
+                        if ($new_failed_logins >= MAX_LOGIN_ATTEMPTS) {
+                            // Lock the account if attempts exceed limit
+                            $lock_time = date('Y-m-d H:i:s', strtotime('+' . LOCK_DURATION_HOURS . ' hour'));
+                            $lock_stmt = $pdo->prepare("UPDATE users SET account_locked_until = ? WHERE user_id = ?");
+                            $lock_stmt->execute([$lock_time, $user['user_id']]);
+                            $errors[] = "You have exceeded the maximum login attempts. Your account is locked for " . LOCK_DURATION_HOURS . " hour(s).";
+                        } else {
+                            $remaining_attempts = MAX_LOGIN_ATTEMPTS - $new_failed_logins;
+                            $errors[] .= " You have " . $remaining_attempts . " attempt(s) remaining before your account is locked.";
+                        }
+                    }
                 }
-                exit();
             } else {
+                // User does not exist (invalid email)
                 $errors[] = "Invalid email or password.";
             }
         } catch (PDOException $e) {
@@ -212,6 +256,7 @@ unset($_SESSION['old_input_login']);
   <?php endif; ?>
 
   <script src="js/script.js"></script>
+  <script src="js/login.js"></script>
   <div class="container">
     <h1 class="logo">Sneaker'X Studio </h1>
 
@@ -236,7 +281,6 @@ unset($_SESSION['old_input_login']);
           <label for="captcha-signup">Solve CAPTCHA:</label>
           <div class="captcha-display" id="captcha-signup-text"><?php echo htmlspecialchars($signupCaptcha); ?></div>
           <input type="text" id="captcha-signup" name="captcha_signup" placeholder="Enter CAPTCHA here" required />
-          <!-- Removed hidden input for security from signup form -->
         </div>
 
         <button type="submit" name="signup_submit" class="submit-btn">Sign Up</button>
@@ -262,7 +306,6 @@ unset($_SESSION['old_input_login']);
           <label for="captcha-login">Solve CAPTCHA:</label>
           <div class="captcha-display" id="captcha-login-text"><?php echo htmlspecialchars($loginCaptcha); ?></div>
           <input type="text" id="captcha-login" name="captcha_login" placeholder="Enter CAPTCHA here" required />
-          <!-- Removed hidden input for security from login form -->
         </div>
 
         <button type="submit" name="login_submit" class="submit-btn">Log In</button>
@@ -277,6 +320,5 @@ unset($_SESSION['old_input_login']);
       </form>
     </div>
   </div>
-  <script src="js/login.js"></script>
 </body>
 </html>
