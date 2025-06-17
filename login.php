@@ -235,7 +235,7 @@ unset($_SESSION['old_input_login']);
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Sneaker'X Studio Login</title>
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/login.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
 <body>
@@ -285,6 +285,8 @@ unset($_SESSION['old_input_login']);
 
         <button type="submit" name="signup_submit" class="submit-btn">Sign Up</button>
         <div class="divider">OR</div>
+        
+        <a href="index.php" name="homebtn" class="home-btn">Home</a>
         <p class="social-label">Sign up with</p>
         <div class="social-icons">
           <button><i class="fab fa-google"></i></button>
@@ -309,7 +311,9 @@ unset($_SESSION['old_input_login']);
         </div>
 
         <button type="submit" name="login_submit" class="submit-btn">Log In</button>
+
         <div class="divider">OR</div>
+        <a href="index.php" name="homebtn" class="home-btn">Home</a>
         <p class="social-label">Log in with</p>
         <div class="social-icons">
           <button><i class="fab fa-google"></i></button>
@@ -322,3 +326,4 @@ unset($_SESSION['old_input_login']);
   </div>
 </body>
 </html>
+

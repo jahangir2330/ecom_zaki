@@ -1,10 +1,8 @@
 <?php
-// Start a session at the very beginning of the script
-session_start();
-// Include database connection. Make sure db.php is in the same directory.
-//require_once 'db.php';
+// Include the common header file which handles session_start(), db.php, and initial HTML/CSS
+require_once 'header.php';
 
-// Redirect if user is not logged in
+// Redirect if user is not logged in (redundant check as header.php includes db.php and sets session variables)
 if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true || !isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit();
@@ -25,6 +23,7 @@ if (!is_dir($uploadDir)) {
 // Fetch user data
 $user = null;
 try {
+    // $pdo is available from header.php
     $stmt = $pdo->prepare("SELECT user_id, username, email, fullname, shippingaddress, profile_image, theme_preference FROM users WHERE user_id = ?");
     $stmt->execute([$userId]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -137,9 +136,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["reset_password"])) {
         if (!password_verify($currentPassword, $storedHash)) {
             $errors[] = "Current password is incorrect.";
         }
-        // Consistent with login.php minimum length (8 characters recommended for security)
-        if (empty($newPassword) || strlen($newPassword) < 8) { 
-            $errors[] = "New password must be at least 8 characters long.";
+        // Consistent with login.php minimum length (3 characters recommended for security)
+        if (empty($newPassword) || strlen($newPassword) < 3) { 
+            $errors[] = "New password must be at least 3 characters long.";
         }
         if ($newPassword !== $confirmNewPassword) {
             $errors[] = "New password and confirmation do not match.";
@@ -177,59 +176,6 @@ if (isset($_SESSION['profile_errors'])) {
 }
 ?>
 
-<!DOCTYPE html>
-<html lang="en" class="<?php echo $currentThemePreference === 'dark' ? 'dark' : ''; ?>">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Profile - Sneaker'X Studio</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-    <style>
-        /* Custom styles for dark mode transition and general elements */
-        body {
-            transition: background-color 0.3s ease, color 0.3s ease;
-            font-family: 'Inter', sans-serif;
-        }
-        .dark body {
-            background-color: #1a202c; /* Dark background */
-            color: #e2e8f0; /* Light text */
-        }
-        .dark .bg-white {
-            background-color: #2d3748; /* Darker card background */
-        }
-        .dark .text-gray-900 {
-            color: #e2e8f0;
-        }
-        .dark .text-gray-700 {
-            color: #cbd5e0;
-        }
-        .dark input, .dark textarea, .dark select {
-            background-color: #4a5568;
-            color: #e2e8f0;
-            border-color: #6b7280;
-        }
-        .dark input:focus, .dark textarea:focus, .dark select:focus {
-            border-color: #63b3ed;
-            box-shadow: 0 0 0 3px rgba(99, 179, 237, 0.5);
-        }
-        .password-box {
-            position: relative;
-        }
-        .password-box .toggle-password {
-            position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            cursor: pointer;
-            color: #9ca3af;
-        }
-        .dark .password-box .toggle-password {
-            color: #cbd5e0;
-        }
-    </style>
-</head>
-<body class="bg-gray-100 text-gray-900 min-h-screen flex items-center justify-center py-10">
     <div class="container mx-auto p-4 md:p-8 bg-white rounded-lg shadow-xl max-w-3xl w-full">
         <h1 class="text-3xl font-bold text-center mb-6 text-indigo-700 dark:text-indigo-400">Your Profile</h1>
 
@@ -281,8 +227,6 @@ if (isset($_SESSION['profile_errors'])) {
                         <input type="file" id="profile_image_file" name="profile_image_file" accept="image/*" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600">
                         <p class="text-xs text-gray-500 mt-1 dark:text-gray-400">Max 5MB. Allowed: JPG, PNG, GIF. Leave empty to keep current image.</p>
                     </div>
-                    <!-- Note: The previous profile_image (URL input) is replaced by file input.
-                         If you wanted both (URL and upload), you'd need more complex logic. -->
 
                     <div class="mb-6">
                         <label class="block text-gray-700 text-sm font-bold mb-2 dark:text-gray-300">Theme Preference:</label>
@@ -368,5 +312,7 @@ if (isset($_SESSION['profile_errors'])) {
             });
         });
     </script>
-</body>
-</html>
+<?php
+// Include the common footer file
+require_once 'footer.php';
+?>

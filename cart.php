@@ -42,7 +42,7 @@ $total = 0;
 <head>
   <meta charset="UTF-8">
   <title>SneakersxStudio - Cart</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css">
 </head>
 <body>

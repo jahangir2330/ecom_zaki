@@ -1,8 +1,6 @@
 <?php
-// Include the common header file which handles session_start(), db.php, and login status
 require_once 'header.php';
 
-// Fetch products (these queries are specific to the index page, so they remain here)
 $stmt = $pdo->query("SELECT * FROM products LIMIT 8");
 $products = $stmt->fetchAll();
 
@@ -81,6 +79,5 @@ $newProducts = $newArrivalQuary->fetchAll();
 </section>
 
 <?php
-// Include the common footer file
 require_once 'footer.php';
 ?>
